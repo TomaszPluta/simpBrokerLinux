@@ -11,7 +11,7 @@
 #include <unistd.h>
 #include <string>
 #include <arpa/inet.h>
-
+#include <vector>
 
 const int MAXHOSTNAME = 200;
 const int MAXCONNECTIONS = 5;
@@ -35,7 +35,7 @@ class Socket
   // Data Transimission
   bool send ( const std::string ) const;
   int recv ( std::string& ) const;
-
+  int recv (std::vector<int>  & v ) const;
 
   void set_non_blocking ( const bool );
 

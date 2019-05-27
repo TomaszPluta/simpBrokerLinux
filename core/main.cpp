@@ -5,12 +5,24 @@
 
 int main ( int argc, int argv[] )
 {
+
+
+
+
+
+
+
+
+
+
+
+
   std::cout << "running....\n";
 
   try
     {
       // Create the socket
-      ServerSocket server ( 30000 );
+      ServerSocket server ( 1886 );
 
       while ( true )
 	{
@@ -25,6 +37,7 @@ int main ( int argc, int argv[] )
 		  std::string data;
 		  new_sock >> data;
 		  new_sock << data;
+		  std::cout <<data;
 		}
 	    }
 	  catch ( SocketException& ) {}
