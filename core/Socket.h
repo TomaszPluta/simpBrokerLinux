@@ -16,6 +16,7 @@
 const int MAXHOSTNAME = 200;
 const int MAXCONNECTIONS = 5;
 const int MAXRECV = 500;
+const int MAXSEND = 500;
 
 class Socket
 {
@@ -34,8 +35,9 @@ class Socket
 
   // Data Transimission
   bool send ( const std::string ) const;
+  bool send ( const std::vector<char> vec ) const;
   int recv ( std::string& ) const;
-  int recv (std::vector<int>  & v ) const;
+  int recv (std::vector<char>  & v ) const;
 
   void set_non_blocking ( const bool );
 

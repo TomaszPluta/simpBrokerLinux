@@ -10,6 +10,8 @@
 #include <vector>
 
 
+
+
 Socket::Socket() :
   m_sock ( -1 )
 {
@@ -121,6 +123,26 @@ bool Socket::send ( const std::string s ) const
 }
 
 
+bool Socket::send ( const std::vector<char> vec ) const
+{
+
+	uint8_t buff[MAXSEND];
+	for (auto i : vec){
+		buff[i] = vec[i];
+	}
+
+  int status = ::send ( m_sock, buff, vec.size(), MSG_NOSIGNAL );
+  if ( status == -1 )
+    {
+      return false;
+    }
+  else
+    {
+      return true;
+    }
+}
+
+
 int Socket::recv ( std::string& s ) const
 {
   char buf [ MAXRECV + 1 ];
@@ -149,7 +171,7 @@ int Socket::recv ( std::string& s ) const
 
 
 
-int Socket::recv ( std::vector<int> & v ) const
+int Socket::recv ( std::vector<char> & v ) const
 {
   char buf [ MAXRECV + 1 ];
   memset ( buf, 0, MAXRECV + 1 );
@@ -167,6 +189,7 @@ int Socket::recv ( std::vector<int> & v ) const
     }
   else
     {
+	  v.clear();
 	  v.insert(v.end(), &buf[0], &buf[MAXRECV]);
       return status;
     }

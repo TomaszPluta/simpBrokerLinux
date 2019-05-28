@@ -40,6 +40,19 @@ const ServerSocket& ServerSocket::operator << ( const std::string& s ) const
 }
 
 
+const ServerSocket& ServerSocket::operator << ( const std::vector<char>& v ) const
+{
+  if ( ! Socket::send ( v ) )
+    {
+      throw SocketException ( "Could not write to socket." );
+    }
+
+  return *this;
+
+ }
+
+
+
 const ServerSocket& ServerSocket::operator >> ( std::string& s ) const
 {
   if ( ! Socket::recv ( s ) )
@@ -49,6 +62,21 @@ const ServerSocket& ServerSocket::operator >> ( std::string& s ) const
 
   return *this;
 }
+
+
+
+const ServerSocket& ServerSocket::operator >> ( std::vector<char>& vec ) const
+{
+  if ( ! Socket::recv ( vec ) )
+    {
+      throw SocketException ( "Could not read from socket." );
+    }
+
+  return *this;
+}
+
+
+
 
 void ServerSocket::accept ( ServerSocket& sock )
 {

@@ -34,10 +34,12 @@ int main ( int argc, int argv[] )
 	    {
 	      while ( true )
 		{
-		  std::string data;
+		  std::vector<char> data;
 		  new_sock >> data;
 		  new_sock << data;
-		  std::cout <<data;
+		  for (auto i : data){
+			  std::cout <<data[i];
+		  }
 		}
 	    }
 	  catch ( SocketException& ) {}
