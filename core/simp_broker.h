@@ -149,6 +149,8 @@ struct conn_flags_t{
 	uint8_t user_name      :1;
 };
 
+
+
 class ConVarHead : public VariableHead{
 public:
 	uint8_t * proto_level;
@@ -277,8 +279,20 @@ public:
 
 
 
-//	Mqtt::TopicName GetTopicName(void);
-//};
+typedef struct{
+	uint16_t * client_id_len;
+	char * client_id;
+	uint16_t  * will_topic_len;
+	char * will_topic;
+	uint16_t  * will_msg_len;
+	char *  will_msg;
+	uint16_t * usr_name_len;
+	char* usr_name;
+	uint16_t * pswd_len;
+	char*  pswd;
+}conn_pld_t;
+
+
 
 
 //  mosquitto_sub -h localhost -p 1886 -u user -P pass -v -t 'devices/#' -v -d -V mqttv311
@@ -286,7 +300,7 @@ public:
 class ConnPacket : public Packet{
 	ConFixHead fix_head;
 	ConVarHead var_head;
-	std::string payload;
+	conn_pld_t pld;
 	void Deserialize(char* frame){
 		uint8_t pos = 0;
 		con_ctrl_byte_t * ctrl_byte =  (con_ctrl_byte_t *) &frame[pos];
@@ -311,44 +325,43 @@ class ConnPacket : public Packet{
 		*var_head.keep_alive = X_HTONS(*var_head.keep_alive);
 		pos += 2;
 
-		payload = to_string(&frame[pos]);
-		//		pld.client_id_len  = (uint16_t*) &frame[pos];//1213
-		//		*pld.client_id_len = X_HTONS(*pld.client_id_len);
-		//		pos += 2;
-		//		pld.client_id = (char*) &frame[pos];
-		//		pos += *pld.client_id_len;
-		//
-		//		if (var_head.conn_flags->last_will){
-		//			pld.will_topic_len = (uint16_t*)  &frame[pos];
-		//			*pld.will_topic_len = X_HTONS(* pld.will_topic_len);
-		//			pos += 2;
-		//			pld.will_topic = (char*)  &frame[pos];
-		//			pos += *pld.will_topic_len;
-		//
-		//			pld.will_msg_len = (uint16_t*)  &frame[pos];
-		//			*pld.will_msg_len = X_HTONS(* pld.will_msg_len);
-		//			pos += 2;
-		//			pld.will_msg = (char*)  &frame[pos];
-		//			pos += *pld.will_msg_len;
-		//		}
-		//		if (var_head.conn_flags->user_name){
-		//			pld.usr_name_len = (uint16_t*)  &frame[pos];
-		//			*pld.usr_name_len = X_HTONS(* pld.usr_name_len);
-		//			pos += 2;
-		//			pld.usr_name= (char*) &frame[pos];
-		//			pos += *pld.usr_name_len;
-		//		}
-		//		if (var_head.conn_flags->pswd){
-		//			pld.pswd_len = (uint16_t*)  &frame[pos];
-		//			*pld.pswd_len = X_HTONS(* pld.pswd_len);
-		//			pos += 2;
-		//			pld.pswd= (char*) &frame[pos];
-		//			pos += *pld.pswd_len;
-		//		}
+		pld.client_id_len  = (uint16_t*) &frame[pos];//1213
+		*pld.client_id_len = X_HTONS(*pld.client_id_len);
+		pos += 2;
+		pld.client_id = (char*) &frame[pos];
+		pos += *pld.client_id_len;
+
+		if (var_head.conn_flags.last_will){
+			pld.will_topic_len = (uint16_t*)  &frame[pos];
+			*pld.will_topic_len = X_HTONS(* pld.will_topic_len);
+			pos += 2;
+			pld.will_topic = (char*)  &frame[pos];
+			pos += *pld.will_topic_len;
+
+			pld.will_msg_len = (uint16_t*)  &frame[pos];
+			*pld.will_msg_len = X_HTONS(* pld.will_msg_len);
+			pos += 2;
+			pld.will_msg = (char*)  &frame[pos];
+			pos += *pld.will_msg_len;
+		}
+		if (var_head.conn_flags.user_name){
+			pld.usr_name_len = (uint16_t*)  &frame[pos];
+			*pld.usr_name_len = X_HTONS(* pld.usr_name_len);
+			pos += 2;
+			pld.usr_name= (char*) &frame[pos];
+			pos += *pld.usr_name_len;
+		}
+		if (var_head.conn_flags.pswd){
+			pld.pswd_len = (uint16_t*)  &frame[pos];
+			*pld.pswd_len = X_HTONS(* pld.pswd_len);
+			pos += 2;
+			pld.pswd= (char*) &frame[pos];
+			pos += *pld.pswd_len;
+		}
 	}
-	void Process(void){
-		;
-	}
+void Process(void){
+
+}
 };
 
 
