@@ -194,7 +194,8 @@ public:
 	VariableHead var_head;
 	std::string ID;
 	virtual void Deserialize(char* frame) = 0;
-	virtual void Process(void) =0;
+	virtual void Process(void) =0;  //rmv?
+	virtual Mqtt::PacketType GetType(void) =0;
 };
 
 
@@ -236,6 +237,14 @@ class SubsPacket : public Packet{
 	void Process(void){
 		;
 	}
+
+
+
+	Mqtt::PacketType  GetType(void){
+		;
+	}
+
+
 };
 
 
@@ -273,6 +282,12 @@ public:
 	}
 	void Process(void){
 		;
+	}
+
+
+
+	Mqtt::PacketType  GetType(void){
+
 	}
 
 };
@@ -362,6 +377,12 @@ class ConnPacket : public Packet{
 void Process(void){
 
 }
+
+
+Mqtt::PacketType  GetType(void){
+
+}
+
 };
 
 
@@ -373,39 +394,57 @@ inline Mqtt::PacketType GetPacketType(char * frame){
 
 
 
-class SimpBroker{
+
+class PacketFactory {
 	std::map<Mqtt::PacketType, Packet*> factoryMap;
+public:
+
+	PacketFactory(){
+	factoryMap[Mqtt::connect] = new ConnPacket();
+	factoryMap[Mqtt::publish] = new PubPacket;
+	factoryMap[Mqtt::subscribe] = new SubsPacket;
+	}
+
+	Packet *get(Mqtt::PacketType packetType){
+		return factoryMap[packetType];
+	}
+};
+
+
+
+
+class SimpBroker{
+
 	std::vector<Client> connectedClients;
 	std::map<Mqtt::TopicName, std::vector<Client>> subscriptions;
+
+	void process(Packet * packet) {
+
+	}
 
 	//18124
 public:
 
 
-	SimpBroker() {
-		factoryMap[Mqtt::connect] = new ConnPacket();
-		factoryMap[Mqtt::publish] = new PubPacket;
-		factoryMap[Mqtt::subscribe] = new SubsPacket;
-
-	}
-
-
-	Packet *PacketFactory(Mqtt::PacketType packetType){
-		return factoryMap[packetType];
-	}
-
-
 
 	void OnReceivedFrame(char * frame, std::string address){
 		Mqtt::PacketType packetType = GetPacketType(frame);
-		Packet * packet = PacketFactory(packetType);
-		packet->Deserialize(frame);
-		packet->Process();
+		PacketFactory packetFactory;
+		Packet * packet = packetFactory.get(packetType);
+		packet->Deserialize(frame);    // deserializedPck = packet->Deserialize(frame);
+		process(packet);
+
 		//Packet * packet = deserializeMap[packetType]->Deserialize(frame);
 		//processMap[packetType]->Process(packet, address);
 	}
 
+
 };
+
+
+
+
+
 
 
 
