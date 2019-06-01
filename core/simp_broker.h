@@ -281,6 +281,8 @@ public:
 //};
 
 
+//  mosquitto_sub -h localhost -p 1886 -u user -P pass -v -t 'devices/#' -v -d -V mqttv311
+
 class ConnPacket : public Packet{
 	ConFixHead fix_head;
 	ConVarHead var_head;
@@ -295,6 +297,10 @@ class ConnPacket : public Packet{
 		fix_head.rem_len = rem_length.value;
 		pos += rem_length.bytes_nb;
 
+		uint8_t nameLenMsb = frame[pos++];
+		uint8_t nameLenLsb = frame[pos++];
+
+		uint16_t nameLen = nameLenMsb + nameLenLsb;
 		var_head.name = to_string(&frame[pos]);
 		pos += var_head.name.length();
 		var_head.proto_level = (uint8_t*) &frame[pos];//8
