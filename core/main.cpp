@@ -2,8 +2,11 @@
 #include "SocketException.h"
 #include <string>
 #include <iostream>
+#include "simp_broker.h"
 
-int main ( int argc, int argv[] )
+
+
+int main ( int argc, char * argv[] )
 {
 
 
@@ -13,7 +16,7 @@ int main ( int argc, int argv[] )
 
 
 
-
+	SimpBroker simpBroker;
 
 
 
@@ -21,7 +24,6 @@ int main ( int argc, int argv[] )
 
   try
     {
-      // Create the socket
       ServerSocket server ( 1886 );
 
       while ( true )
@@ -34,12 +36,11 @@ int main ( int argc, int argv[] )
 	    {
 	      while ( true )
 		{
-		  std::vector<char> data;
-		  new_sock >> data;
-		  new_sock << data;
-		  for (auto i : data){
-			  std::cout <<data[i];
-		  }
+		  std::vector<char> rxFrame;
+		  new_sock >> rxFrame;
+		  std::cout<<new_sock.get_cli_addr();
+		  simpBroker.OnReceivedFrame(rxFrame.data(), new_sock.get_cli_addr());
+
 		}
 	    }
 	  catch ( SocketException& ) {}

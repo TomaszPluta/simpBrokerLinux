@@ -4,7 +4,7 @@
 #define ServerSocket_class
 
 #include "Socket.h"
-
+#include <string>
 
 class ServerSocket : private Socket
 {
@@ -20,6 +20,8 @@ class ServerSocket : private Socket
   const ServerSocket& operator >> ( std::vector<char>& vec ) const;
 
   void accept ( ServerSocket& );
+  std::string get_cli_addr(void);
+ private:
 
 };
 

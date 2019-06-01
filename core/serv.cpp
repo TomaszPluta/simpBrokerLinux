@@ -85,3 +85,19 @@ void ServerSocket::accept ( ServerSocket& sock )
       throw SocketException ( "Could not accept socket." );
     }
 }
+
+
+
+
+std::string ServerSocket::get_cli_addr(void){
+	return Socket::get_addr();
+}
+
+
+
+
+
+
+
+
+
