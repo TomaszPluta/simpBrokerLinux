@@ -13,6 +13,7 @@
 #include <string>
 #include <sstream>
 #include <cstring>
+#include <functional>
 
 
 #define X_HTONS(a) 					((a>>8) | (a<<8))
@@ -241,7 +242,7 @@ class SubsPacket : public Packet{
 
 
 	Mqtt::PacketType  GetType(void){
-		;
+		return Mqtt::subscribe;
 	}
 
 
@@ -287,7 +288,7 @@ public:
 
 
 	Mqtt::PacketType  GetType(void){
-
+		return Mqtt::publish;
 	}
 
 };
@@ -380,7 +381,7 @@ void Process(void){
 
 
 Mqtt::PacketType  GetType(void){
-
+	return Mqtt::connect;
 }
 
 };
@@ -412,19 +413,43 @@ public:
 
 
 
+inline void ConnectCallback(Packet *pckt){
+	 std::cout<<std::endl<<"connect callback"<< std::endl;
+	;
+}
+
+inline void PublishCallback(Packet *pckt){
+	;
+}
+
+inline void SubscribeCallback(Packet *pckt){
+	;
+}
 
 class SimpBroker{
-
+	using payloadCallback = std::function <void(Packet *)>;
+	std::map<Mqtt::PacketType, payloadCallback> pckCallback;
 	std::vector<Client> connectedClients;
 	std::map<Mqtt::TopicName, std::vector<Client>> subscriptions;
 
+
 	void process(Packet * packet) {
 
+		Mqtt::PacketType pcktType = packet->GetType();
+		pckCallback[pcktType](packet);
 	}
 
-	//18124
+
+
+
 public:
 
+	SimpBroker(){
+		pckCallback[Mqtt::connect] = ConnectCallback;
+		pckCallback[Mqtt::publish] = PublishCallback;
+		pckCallback[Mqtt::subscribe] = SubscribeCallback;
+
+	}
 
 
 	void OnReceivedFrame(char * frame, std::string address){
