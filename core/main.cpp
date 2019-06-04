@@ -39,7 +39,14 @@ int main ( int argc, char * argv[] )
 		  std::vector<char> rxFrame;
 		  new_sock >> rxFrame;
 		  std::cout<<new_sock.get_cli_addr();
-		  simpBroker.OnReceivedFrame(rxFrame.data(), new_sock.get_cli_addr());
+		  conn_ack_t * ack  = simpBroker.OnReceivedFrame(rxFrame.data(), new_sock.get_cli_addr());
+		  std::vector<char> rsp;
+		  rsp.push_back(ack->control_type);
+		  rsp.push_back(ack->remainin_len);
+		  rsp.push_back(0);
+		  rsp.push_back(ack->conn_code);
+
+		  new_sock<<rsp;
 
 		}
 	    }

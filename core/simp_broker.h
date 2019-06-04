@@ -57,7 +57,15 @@ std::string to_string(T value) //due to compiler issue
 
 
 class Client{
-	;
+public:
+	void Send(std::string msg){
+		;
+	}
+	char *client_id;
+	char *will_topic;
+	char *will_msg;
+	char *usr_name;
+	char *pswd;
 };
 
 typedef struct{
@@ -204,6 +212,7 @@ class SubsPacket : public Packet{
 	SubFixHead fix_head;
 	SubVarHead var_head;
 	std::string payload;
+public:
 	Mqtt::TopicName GetTopicName(void);
 	void Deserialize(char *frame){
 		uint8_t pos = 0;
@@ -245,7 +254,7 @@ class SubsPacket : public Packet{
 		return Mqtt::subscribe;
 	}
 
-
+	std::string topic;  //TODO: nothere...
 };
 
 
@@ -291,6 +300,10 @@ public:
 		return Mqtt::publish;
 	}
 
+
+	std::string topic; //TODO not here...
+ 	std::string msg; //TODO not here...
+
 };
 
 
@@ -316,6 +329,7 @@ typedef struct{
 class ConnPacket : public Packet{
 	ConFixHead fix_head;
 	ConVarHead var_head;
+public:
 	conn_pld_t pld;
 	void Deserialize(char* frame){
 		uint8_t pos = 0;
@@ -412,62 +426,119 @@ public:
 };
 
 
+typedef struct{
+	uint8_t session_pres   :1;
+	uint8_t reserved 	   :7;
+}connect_ack_Flags;
 
-inline void ConnectCallback(Packet *pckt){
-	 std::cout<<std::endl<<"connect callback"<< std::endl;
-	;
+
+
+typedef struct{
+	uint8_t control_type;
+	uint8_t remainin_len;
+	connect_ack_Flags ack_flags;
+	uint8_t conn_code;
+}conn_ack_t;
+
+
+#define CONN_ACK_PLD_LEN			(2)
+#define CONTR_TYPE_CONNACK 			(2)
+
+
+inline uint8_t * encode_conn_ack(conn_ack_t * header_ack, bool session_present, uint8_t code){
+	memset(header_ack, 0, sizeof (conn_ack_t));
+	header_ack->control_type = (CONTR_TYPE_CONNACK << 4);
+	header_ack->remainin_len = CONN_ACK_PLD_LEN;
+	header_ack->ack_flags.session_pres = session_present;
+	header_ack->conn_code = code;
+	return (uint8_t *)header_ack;
 }
 
-inline void PublishCallback(Packet *pckt){
-	;
-}
 
-inline void SubscribeCallback(Packet *pckt){
-	;
-}
+
+using Address = std::string; //TODO: mqtt namespace
 
 class SimpBroker{
-	using payloadCallback = std::function <void(Packet *)>;
-	std::map<Mqtt::PacketType, payloadCallback> pckCallback;
-	std::vector<Client> connectedClients;
-	std::map<Mqtt::TopicName, std::vector<Client>> subscriptions;
 
-
-	void process(Packet * packet) {
-
-		Mqtt::PacketType pcktType = packet->GetType();
-		pckCallback[pcktType](packet);
-	}
-
+	std::map<Address, Client*> connectedCli;
+	std::map<Mqtt::TopicName, std::vector<Client*>> subscriptions;
 
 
 
 public:
 
-	SimpBroker(){
-		pckCallback[Mqtt::connect] = ConnectCallback;
-		pckCallback[Mqtt::publish] = PublishCallback;
-		pckCallback[Mqtt::subscribe] = SubscribeCallback;
+
+	void Process(Packet * packet) {
+		Mqtt::PacketType type = packet->GetType();
 
 	}
 
 
-	void OnReceivedFrame(char * frame, std::string address){
+	void SendPublish(std::string topic, std::string message){
+		 std::vector<Client*> subClients = subscriptions[topic];
+		 for (auto it : subClients){
+			 it->Send(message);
+		 }
+	}
+
+
+	void AddSubscription(std::string topic, Client* cli){ //TODO subs topic list. Subscriptions should be vector of lists
+		 subscriptions[topic].push_back(cli);
+	}
+
+
+	void AddClient(Client* cli, Address addr){
+		connectedCli[addr] = cli;
+	}
+
+
+	Client* GetClient(Address addr){
+		return connectedCli[addr];
+	}
+
+	conn_ack_t *  OnReceivedFrame(char * frame, std::string address){
 		Mqtt::PacketType packetType = GetPacketType(frame);
 		PacketFactory packetFactory;
 		Packet * packet = packetFactory.get(packetType);
-		packet->Deserialize(frame);    // deserializedPck = packet->Deserialize(frame);
-		process(packet);
+		packet->Deserialize(frame);    // packet = frame.Deserialize(); ??
+		//Mqtt::PacketType type = packet->GetType();
+		if (packetType == Mqtt::connect){ //delegates
+			ConnPacket * conPckt = (ConnPacket *) packet;
+			Client * cli =  new(Client);
+			cli->client_id = conPckt->pld.client_id;
+			cli->usr_name =   conPckt->pld.usr_name;
+			cli->pswd = conPckt->pld.pswd;
+			cli->will_msg = conPckt->pld.will_msg;
+			cli->will_topic = conPckt->pld.will_topic;
+			AddClient(cli, address);
 
-		//Packet * packet = deserializeMap[packetType]->Deserialize(frame);
-		//processMap[packetType]->Process(packet, address);
+			conn_ack_t * ack = new conn_ack_t();
+			encode_conn_ack(ack, true, 0);
+			return ack;
+
+
+
+		}
+		if (packetType == Mqtt::publish){
+			PubPacket * pubPckt = (PubPacket *) packet;
+			SendPublish(pubPckt->topic, pubPckt->msg);
+		}
+		if (packetType == Mqtt::subscribe){
+			SubsPacket * subsPckt = (SubsPacket *) packet;
+			Client * cli = GetClient(address);
+			AddSubscription(subsPckt->topic, cli);
+		}
 	}
 
 
+
+	static void SubscribeCallback(Packet *pckt){
+		;
+	}
+
+
+
 };
-
-
-
 
 
 
