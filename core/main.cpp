@@ -43,8 +43,8 @@ int main ( int argc, char * argv[] )
 		  std::vector<char> rsp;
 		  rsp.push_back(ack->control_type);
 		  rsp.push_back(ack->remainin_len);
+		  rsp.push_back(1);
 		  rsp.push_back(0);
-		  rsp.push_back(ack->conn_code);
 
 		  new_sock<<rsp;
 
