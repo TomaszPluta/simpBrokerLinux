@@ -435,23 +435,28 @@ typedef struct{
 
 
 class ConnAck{
-public:
-	char control_type;
-	char remainin_len;
+	static constexpr uint8_t CONTR_TYPE_CONNACK = 2;
+	static constexpr uint8_t CONN_ACK_PLD_LEN = 2;
+	static constexpr uint8_t CONTROL_TYPE = CONTR_TYPE_CONNACK << 4;
 	connect_ack_Flags ack_flags;
 	char conn_code;
-
+public:
 const ConnAck& operator >> (std::vector<char> &v) const {
-	  v.push_back(this->control_type);
-	  v.push_back(this->remainin_len);
+	  v.push_back(CONTROL_TYPE);
+	  v.push_back(CONN_ACK_PLD_LEN);
 	  v.push_back(1);
 	  v.push_back(0);
 
 	  return *this;
 }
 
-};
 
+	void Encode (bool sessionPresent, uint8_t code){
+		ack_flags.session_pres = sessionPresent;
+		conn_code = code;
+	}
+
+};
 
 
 
@@ -461,15 +466,6 @@ const ConnAck& operator >> (std::vector<char> &v) const {
 #define CONN_ACK_PLD_LEN			(2)
 #define CONTR_TYPE_CONNACK 			(2)
 
-
-inline uint8_t * encode_conn_ack(ConnAck * header_ack, bool session_present, uint8_t code){
-	memset(header_ack, 0, sizeof (ConnAck));
-	header_ack->control_type = (CONTR_TYPE_CONNACK << 4);
-	header_ack->remainin_len = CONN_ACK_PLD_LEN;
-	header_ack->ack_flags.session_pres = session_present;
-	header_ack->conn_code = code;
-	return (uint8_t *)header_ack;
-}
 
 
 
@@ -530,7 +526,7 @@ public:
 			AddClient(cli, address);
 
 			ConnAck ack;
-			encode_conn_ack(&ack, true, 0); //new ack = encodeack (true, 0);
+			ack.Encode(true, 0);
 			Mqtt::AckRsp rsp;
 			ack >> rsp;
 			return rsp;
