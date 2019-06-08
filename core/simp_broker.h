@@ -22,6 +22,7 @@
 
 namespace Mqtt{
 using TopicName = std::string;
+using AckRsp = std::vector<char>;
 using  PacketType = uint8_t;
 constexpr PacketType connect	 = 1;
 constexpr PacketType connack     = 2;
@@ -254,7 +255,7 @@ public:
 		return Mqtt::subscribe;
 	}
 
-	std::string topic;  //TODO: nothere...
+	std::string topic;  //TODO: no there...
 };
 
 
@@ -404,7 +405,7 @@ Mqtt::PacketType  GetType(void){
 
 
 inline Mqtt::PacketType GetPacketType(char * frame){
-	return (Mqtt::PacketType) (frame[0]>>PCK_TYPE_POS);
+	return (Mqtt::PacketType) (((uint8_t)frame[0])>>PCK_TYPE_POS);
 }
 
 
@@ -433,20 +434,36 @@ typedef struct{
 
 
 
-typedef struct{
-	uint8_t control_type;
-	uint8_t remainin_len;
+class ConnAck{
+public:
+	char control_type;
+	char remainin_len;
 	connect_ack_Flags ack_flags;
-	uint8_t conn_code;
-}conn_ack_t;
+	char conn_code;
+
+const ConnAck& operator >> (std::vector<char> &v) const {
+	  v.push_back(this->control_type);
+	  v.push_back(this->remainin_len);
+	  v.push_back(1);
+	  v.push_back(0);
+
+	  return *this;
+}
+
+};
+
+
+
+
+
 
 
 #define CONN_ACK_PLD_LEN			(2)
 #define CONTR_TYPE_CONNACK 			(2)
 
 
-inline uint8_t * encode_conn_ack(conn_ack_t * header_ack, bool session_present, uint8_t code){
-	memset(header_ack, 0, sizeof (conn_ack_t));
+inline uint8_t * encode_conn_ack(ConnAck * header_ack, bool session_present, uint8_t code){
+	memset(header_ack, 0, sizeof (ConnAck));
 	header_ack->control_type = (CONTR_TYPE_CONNACK << 4);
 	header_ack->remainin_len = CONN_ACK_PLD_LEN;
 	header_ack->ack_flags.session_pres = session_present;
@@ -496,7 +513,7 @@ public:
 		return connectedCli[addr];
 	}
 
-	conn_ack_t *  OnReceivedFrame(char * frame, std::string address){
+	Mqtt::AckRsp  OnReceivedFrame(char * frame, std::string address){
 		Mqtt::PacketType packetType = GetPacketType(frame);
 		PacketFactory packetFactory;
 		Packet * packet = packetFactory.get(packetType);
@@ -512,9 +529,11 @@ public:
 			cli->will_topic = conPckt->pld.will_topic;
 			AddClient(cli, address);
 
-			conn_ack_t * ack = new conn_ack_t();
-			encode_conn_ack(ack, true, 0);
-			return ack;
+			ConnAck ack;
+			encode_conn_ack(&ack, true, 0); //new ack = encodeack (true, 0);
+			Mqtt::AckRsp rsp;
+			ack >> rsp;
+			return rsp;
 
 
 
