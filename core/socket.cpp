@@ -143,12 +143,12 @@ bool Socket::send ( const std::string s ) const
 bool Socket::send ( const std::vector<char> vec ) const
 {
 
-	uint8_t buff[MAXSEND];
-	for (auto i : vec){
-		buff[i] = vec[i];
-	}
+//	uint8_t buff[MAXSEND];
+//	for (auto i : vec){
+//		buff[i] = vec[i];
+//	}
 
-	int status = ::send ( m_sock, buff, vec.size(), MSG_NOSIGNAL );
+	int status = ::send ( m_sock, vec.data(), vec.size(), MSG_NOSIGNAL );
 	if ( status == -1 )
 	{
 		return false;

@@ -435,13 +435,13 @@ typedef struct{
 
 
 class ConnAck{
-	static constexpr uint8_t CONTR_TYPE_CONNACK = 2;
+	static constexpr uint8_t CONTROL_TYPE = Mqtt::connack << 4;
 	static constexpr uint8_t CONN_ACK_PLD_LEN = 2;
-	static constexpr uint8_t CONTROL_TYPE = CONTR_TYPE_CONNACK << 4;
 	connect_ack_Flags ack_flags;
 	char conn_code;
 public:
 const ConnAck& operator >> (std::vector<char> &v) const {
+	  v.clear();
 	  v.push_back(CONTROL_TYPE);
 	  v.push_back(CONN_ACK_PLD_LEN);
 	  v.push_back(1);
@@ -455,7 +455,33 @@ const ConnAck& operator >> (std::vector<char> &v) const {
 		ack_flags.session_pres = sessionPresent;
 		conn_code = code;
 	}
+};
 
+
+
+
+
+class SubAck{
+	static constexpr uint8_t CONTROL_TYPE = Mqtt::suback << 4;
+	static constexpr uint8_t CONN_ACK_PLD_LEN = 3;
+	uint16_t packetId;
+	char retCode;
+public:
+const SubAck& operator >> (std::vector<char> &v) const {
+	  v.clear();
+	  v.push_back(CONTROL_TYPE);
+	  v.push_back(CONN_ACK_PLD_LEN);
+	  v.push_back(packetId>>8);
+	  v.push_back(packetId&0xFF);
+	  v.push_back(retCode);
+
+	  return *this;
+}
+
+	void Encode (uint16_t id, uint8_t code){
+		packetId = id;
+		retCode  = code;
+	}
 };
 
 
@@ -514,7 +540,6 @@ public:
 		PacketFactory packetFactory;
 		Packet * packet = packetFactory.get(packetType);
 		packet->Deserialize(frame);    // packet = frame.Deserialize(); ??
-		//Mqtt::PacketType type = packet->GetType();
 		if (packetType == Mqtt::connect){ //delegates
 			ConnPacket * conPckt = (ConnPacket *) packet;
 			Client * cli =  new(Client);
@@ -531,8 +556,6 @@ public:
 			ack >> rsp;
 			return rsp;
 
-
-
 		}
 		if (packetType == Mqtt::publish){
 			PubPacket * pubPckt = (PubPacket *) packet;
@@ -541,8 +564,18 @@ public:
 		if (packetType == Mqtt::subscribe){
 			SubsPacket * subsPckt = (SubsPacket *) packet;
 			Client * cli = GetClient(address);
-			AddSubscription(subsPckt->topic, cli);
+			AddSubscription(subsPckt->topic, cli); //cli.AddSubs
+
+			SubAck ack;
+			ack.Encode(0, 0);
+			Mqtt::AckRsp rsp;
+			ack >> rsp;
+			return rsp;
 		}
+
+
+	Mqtt::AckRsp rsp;
+	return rsp;
 	}
 
 
